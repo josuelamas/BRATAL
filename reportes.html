@@ -49,7 +49,11 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
 .sidebar-overlay.show{display:block}
 
 /* Top bar actions */
-.top-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center}
+.top-bar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.filter-group select{padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;cursor:pointer}
+.filter-group select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--glow)}
 .search-wrap{position:relative;flex:1;max-width:320px}
 .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:var(--muted)}
 .search-input{padding:10px 14px 10px 40px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;width:100%}
@@ -225,6 +229,14 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
   <div class="content">
     <!-- Top actions -->
     <div class="top-bar">
+      <div class="filter-group">
+        <label>Proveedor</label>
+        <select id="fProv" style="min-width:220px">
+          <option value="">Selecciona proveedor</option>
+          <option value="GRANOS Y SEMILLAS DE MEXICO, S.A. DE C.V.">GRANOS Y SEMILLAS DE MEXICO</option>
+          <option value="VEPORTO DE MEXICO">VEPORTO DE MEXICO</option>
+        </select>
+      </div>
       <div class="search-wrap">
         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
         <input class="search-input" type="text" placeholder="Buscar sucursal…" id="storeSearch" oninput="filterCards()">
@@ -434,7 +446,11 @@ async function _buildPDF(){
   doc.text(dateStr+' · '+timeStr,M,52);
 
   let y=75;
+  const provFilter=document.getElementById('fProv').value;
+  const provName=provFilter||'Todos los proveedores';
   doc.setTextColor(30,41,59);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Proveedor: '+provName,M,y);y+=8;
+  doc.setFontSize(11);
   doc.text('Sucursales incluidas: '+selStores.length,M,y);y+=12;
 
   // Summary list
@@ -527,7 +543,7 @@ async function _buildPDF(){
   for(let i=1;i<=tp;i++){
     doc.setPage(i);
     doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(170,170,170);
-    doc.text('BRATALO · Reporte Ejecutivo · '+dateStr,M,H-7);
+    doc.text('BRATALO · '+provName+' · '+dateStr,M,H-7);
     doc.text('Pág '+i+'/'+tp,W-M,H-7,{align:'right'});
     doc.setDrawColor(210,210,210);doc.line(M,H-10,W-M,H-10);
   }
