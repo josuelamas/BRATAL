@@ -65,8 +65,11 @@ function toggleTheme(){document.body.dataset.theme=document.body.dataset.theme==
 (function(){const t=localStorage.getItem('vp_theme');if(t)document.body.dataset.theme=t})();
 function doLogin(e){
   e.preventDefault();
-  if(document.getElementById('user').value.trim().toLowerCase()==='juan'&&document.getElementById('pass').value.trim()==='juan2026'){
-    sessionStorage.setItem('vp_auth','1');sessionStorage.setItem('vp_user','Juan');window.location.href='inventario.html';
+  const u=document.getElementById('user').value.trim().toLowerCase();
+  const p=document.getElementById('pass').value.trim();
+  const users={'juan':'juan2026','adaly':'adaly2026'};
+  if(users[u]&&users[u]===p){
+    sessionStorage.setItem('vp_auth','1');sessionStorage.setItem('vp_user',u.charAt(0).toUpperCase()+u.slice(1));window.location.href='inventario.html';
   }else{const em=document.getElementById('errMsg');em.classList.remove('show');void em.offsetWidth;em.classList.add('show')}
   return false;
 }
