@@ -11,20 +11,22 @@
 :root{
   --bg:#0b0e14;--card:#151923;--border:#1e2636;--text:#e2e8f0;--muted:#7a8599;
   --accent:#3b82f6;--accent2:#60a5fa;--glow:rgba(59,130,246,.15);--danger:#ef4444;
+  --green:#22c55e;--orange:#f59e0b;--purple:#a855f7;
 }
 [data-theme="light"]{
   --bg:#f1f5f9;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;
   --accent:#2563eb;--accent2:#3b82f6;--glow:rgba(37,99,235,.08);--danger:#dc2626;
+  --green:#16a34a;--orange:#d97706;--purple:#9333ea;
 }
 html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
-.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative}
 .bg-grid{position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;opacity:.3;pointer-events:none}
 .bg-glow{position:fixed;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 70%);top:30%;left:50%;transform:translate(-50%,-50%);pointer-events:none;animation:pulse 4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}}
+
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative}
 .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:420px;position:relative;z-index:1;box-shadow:0 25px 60px rgba(0,0,0,.25)}
 .logo-area{text-align:center;margin-bottom:36px}
-.logo-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 8px 24px var(--glow)}
-.logo-icon svg{width:28px;height:28px;fill:#fff}
 .logo-title{font-family:'Outfit',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.5px}
 .logo-sub{color:var(--muted);font-size:13px;margin-top:4px;font-weight:500}
 .field{margin-bottom:20px}
@@ -37,20 +39,44 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
 .btn-login{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:transform .15s,box-shadow .15s}
 .btn-login:hover{transform:translateY(-1px);box-shadow:0 8px 24px var(--glow)}
 .btn-login:active{transform:translateY(0)}
+
+/* Menu */
+.menu-wrap{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative}
+.menu-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:48px 40px;width:100%;max-width:560px;position:relative;z-index:1;box-shadow:0 25px 60px rgba(0,0,0,.25)}
+.welcome-text{text-align:center;margin-bottom:32px}
+.welcome-text h2{font-family:'Outfit',sans-serif;font-weight:700;font-size:22px}
+.welcome-text p{color:var(--muted);font-size:14px;margin-top:6px}
+.modules{display:grid;grid-template-columns:1fr;gap:14px}
+.mod-btn{display:flex;align-items:center;gap:16px;padding:20px;background:var(--bg);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .2s;text-decoration:none;color:var(--text)}
+.mod-btn:hover{border-color:var(--accent);background:var(--glow);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.15)}
+.mod-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.mod-icon.inv{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.mod-icon.rep{background:linear-gradient(135deg,var(--green),#4ade80)}
+.mod-icon.vis{background:linear-gradient(135deg,var(--purple),#c084fc)}
+.mod-info h3{font-size:16px;font-weight:700;margin-bottom:3px}
+.mod-info p{font-size:13px;color:var(--muted);line-height:1.4}
+.mod-arrow{margin-left:auto;color:var(--muted);font-size:18px;transition:transform .2s}
+.mod-btn:hover .mod-arrow{transform:translateX(4px);color:var(--accent)}
+.btn-logout{margin-top:24px;text-align:center}
+.btn-logout button{background:none;border:1px solid var(--border);border-radius:10px;padding:10px 28px;color:var(--muted);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s}
+.btn-logout button:hover{border-color:var(--danger);color:var(--danger)}
+
 .theme-toggle{position:fixed;top:20px;right:20px;z-index:10;background:var(--card);border:1px solid var(--border);border-radius:10px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .theme-toggle svg{width:20px;height:20px;fill:var(--muted)}
-@media(max-width:480px){.login-card{padding:36px 24px;border-radius:16px}}
+@media(max-width:480px){.login-card,.menu-card{padding:36px 24px;border-radius:16px}.mod-btn{padding:16px}}
 </style>
 </head>
 <body data-theme="dark">
 <div class="bg-grid"></div>
 <div class="bg-glow"></div>
 <button class="theme-toggle" onclick="toggleTheme()"><svg viewBox="0 0 24 24"><path d="M12 3a1 1 0 011 1v1a1 1 0 01-2 0V4a1 1 0 011-1zm0 15a1 1 0 011 1v1a1 1 0 01-2 0v-1a1 1 0 011-1zm9-6a1 1 0 010 2h-1a1 1 0 010-2h1zM5 12a1 1 0 010 2H4a1 1 0 010-2h1zm14.07-6.36a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41-1.41l.71-.71a1 1 0 011.41 0zM7.05 17.66a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41-1.41l.71-.71a1 1 0 011.41 0zM19.07 18.36a1 1 0 01-1.41 0l-.71-.71a1 1 0 011.41-1.41l.71.71a1 1 0 010 1.41zM7.05 6.34a1 1 0 01-1.41 0l-.71-.71A1 1 0 016.34 4.22l.71.71a1 1 0 010 1.41zM12 8a4 4 0 100 8 4 4 0 000-8z"/></svg></button>
-<div class="login-wrap">
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginView">
   <div class="login-card">
     <div class="logo-area">
       <div class="logo-title">BRATALO</div>
-      <div class="logo-sub">Panel de Control · Inventario</div>
+      <div class="logo-sub">Panel de Control</div>
     </div>
     <form onsubmit="return doLogin(event)">
       <div class="field"><label>Usuario</label><input type="text" id="user" autocomplete="username" placeholder="Ingresa tu usuario" autofocus></div>
@@ -60,16 +86,75 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
     </form>
   </div>
 </div>
+
+<!-- MENU -->
+<div class="menu-wrap" id="menuView">
+  <div class="menu-card">
+    <div class="welcome-text">
+      <div class="logo-title">BRATALO</div>
+      <h2 id="greetUser"></h2>
+      <p>Selecciona un módulo para continuar</p>
+    </div>
+    <div class="modules">
+      <a href="inventario.html" class="mod-btn">
+        <div class="mod-icon inv">📦</div>
+        <div class="mod-info">
+          <h3>Inventario</h3>
+          <p>Dashboard de inventario semanal, filtros y KPIs</p>
+        </div>
+        <span class="mod-arrow">›</span>
+      </a>
+      <a href="reportes.html" class="mod-btn">
+        <div class="mod-icon rep">📋</div>
+        <div class="mod-info">
+          <h3>Reportes</h3>
+          <p>Reportes de tienda con fotos y exportación PDF</p>
+        </div>
+        <span class="mod-arrow">›</span>
+      </a>
+      <a href="visitas.html" class="mod-btn">
+        <div class="mod-icon vis">🗓️</div>
+        <div class="mod-info">
+          <h3>Control de Visitas</h3>
+          <p>Registro de visitas a tienda con historial y reporte Excel</p>
+        </div>
+        <span class="mod-arrow">›</span>
+      </a>
+    </div>
+    <div class="btn-logout"><button onclick="doLogout()">Cerrar Sesión</button></div>
+  </div>
+</div>
+
 <script>
 function toggleTheme(){document.body.dataset.theme=document.body.dataset.theme==='dark'?'light':'dark';localStorage.setItem('vp_theme',document.body.dataset.theme)}
 (function(){const t=localStorage.getItem('vp_theme');if(t)document.body.dataset.theme=t})();
+
+function showMenu(name){
+  document.getElementById('loginView').style.display='none';
+  document.getElementById('menuView').style.display='flex';
+  document.getElementById('greetUser').textContent='Hola, '+name;
+}
+function doLogout(){
+  sessionStorage.removeItem('vp_auth');sessionStorage.removeItem('vp_user');
+  document.getElementById('menuView').style.display='none';
+  document.getElementById('loginView').style.display='flex';
+}
+// Auto-resume session
+(function(){
+  if(sessionStorage.getItem('vp_auth')==='1'){
+    showMenu(sessionStorage.getItem('vp_user')||'Usuario');
+  }
+})();
+
 function doLogin(e){
   e.preventDefault();
   const u=document.getElementById('user').value.trim().toLowerCase();
   const p=document.getElementById('pass').value.trim();
   const users={'juan':'juan2026','adaly':'adaly2026'};
   if(users[u]&&users[u]===p){
-    sessionStorage.setItem('vp_auth','1');sessionStorage.setItem('vp_user',u.charAt(0).toUpperCase()+u.slice(1));window.location.href='inventario.html';
+    const name=u.charAt(0).toUpperCase()+u.slice(1);
+    sessionStorage.setItem('vp_auth','1');sessionStorage.setItem('vp_user',name);
+    showMenu(name);
   }else{const em=document.getElementById('errMsg');em.classList.remove('show');void em.offsetWidth;em.classList.add('show')}
   return false;
 }
