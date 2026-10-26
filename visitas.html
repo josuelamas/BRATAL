@@ -170,6 +170,20 @@ tr:hover td{background:var(--glow)}
 /* Hidden sections */
 .section{display:none}
 .section.active{display:block}
+
+/* Searchable dropdown */
+.sdrop{position:relative;width:100%}
+.sdrop-btn{width:100%;padding:9px 11px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;text-align:left;cursor:pointer;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sdrop-btn.placeholder{color:var(--muted)}
+.sdrop-btn:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--glow)}
+.sdrop-panel{display:none;position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-top:4px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3);max-height:260px;overflow:hidden;flex-direction:column}
+.sdrop.open .sdrop-panel{display:flex}
+.sdrop-search{width:100%;padding:8px 11px;border:none;border-bottom:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;outline:none;border-radius:10px 10px 0 0}
+.sdrop-list{overflow-y:auto;max-height:210px;padding:4px}
+.sdrop-opt{padding:7px 11px;cursor:pointer;font-size:13px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sdrop-opt:hover{background:var(--glow);color:var(--accent)}
+.sdrop-opt.active{background:var(--accent);color:#fff}
+.form-group .sdrop-btn{padding:14px 16px;font-size:15px;background:var(--bg);border-radius:12px}
 </style>
 </head>
 <body data-theme="dark">
@@ -226,7 +240,7 @@ tr:hover td{background:var(--glow)}
           </div>
           <div class="form-group">
             <label>Tienda / Sucursal</label>
-            <input type="text" id="vTienda" placeholder="Ej: Calimax Otay">
+            <div class="sdrop" id="vTienda" data-placeholder="Seleccionar tienda…" data-value=""></div>
           </div>
           <div class="form-group">
             <label>Proveedor</label>
@@ -297,7 +311,7 @@ tr:hover td{background:var(--glow)}
       <div class="filters-bar">
         <div class="filter-group"><label>Desde</label><input type="date" id="hDesde"></div>
         <div class="filter-group"><label>Hasta</label><input type="date" id="hHasta"></div>
-        <div class="filter-group"><label>Tienda</label><select id="hTienda"><option value="">Todas</option></select></div>
+        <div class="filter-group"><label>Tienda</label><div class="sdrop" id="hTienda" data-placeholder="Todas" data-value=""></div></div>
         <div class="filter-group"><label>Proveedor</label><select id="hProv"><option value="">Todos</option></select></div>
         <div class="filter-group"><label>Motivo</label><select id="hMotivo"><option value="">Todos</option></select></div>
         <div class="filter-group"><label>Estado</label><select id="hEstado"><option value="">Todos</option><option value="Completada">Completada</option><option value="Pendiente">Pendiente</option><option value="Cancelada">Cancelada</option></select></div>
@@ -339,7 +353,7 @@ tr:hover td{background:var(--glow)}
           </div>
           <div class="form-group">
             <label>Tienda</label>
-            <select id="rTienda"><option value="">Todas</option></select>
+            <div class="sdrop" id="rTienda" data-placeholder="Todas" data-value=""></div>
           </div>
           <div class="form-group">
             <label>Estado</label>
@@ -368,12 +382,56 @@ let visits=[];
 let editingId=null;
 let pendingPhotos=[];
 
+const TIENDAS=["AP AMANECER","AP ANGELES DE PUEBLA","AP CAPISTRANO","AP CHULA VISTA","AP COLINAS DE LA PRESA","AP EL NINO","AP JARDINES","AP LA GLORIA","AP NATURA","AP NUEVO REFORMA","AP PEDREGAL","AP RIVERA CAMPESTRE","AP ROSARITO","AP SANTA ISABEL","AP SANTA JULIA","AP TERRAZAS DEL VALLE","AP TOLEDO","AP VALLE DEL SOL","AP VILLAS DEL PRADO 2","AP VILLAS DEL REAL","AP VINAS DEL MAR","BODEGON-CD","CD SECOS","COMERCIO INTERNACIONAL CALIFOR","CP ALTA BRISA","CP BOULEVARD","CP CETYS MEXICALI","CP HIPODROMO","CP MONTECARLO","CP PENINSULA","CP PLAYAS","CP RIO","CX ALAMAR","CX AMERICAS","CX CALLE 27","CX CHAPULTEPEC","CX CHAPULTEPEC II","CX COLINAS DE CALIFORNIA","CX CONSTITUCION","CX CORTEZ","CX DEL BOSQUE","CX DELEGACION","CX DELICIAS","CX DIAZ ORDAZ","CX DORADO","CX ESMERALDA","CX FIESTA","CX FLORIDO","CX FUNDADORES","CX HERRADURA","CX HIDALGO","CX HIDALGO MEXICALI","CX INDEPENDENCIA","CX JIBARITO","CX JUAREZ","CX LA PRESA","CX LA VILLA","CX LAS FUENTES","CX LAS TORRES","CX LAUREL","CX LAUREL II","CX LAZARO CARDENAS ESTE","CX LIBERTAD","CX LOMA BONITA","CX LOMAS","CX LOS OLIVOS","CX MANEADERO","CX MATAMOROS","CX MESA","CX MIRAMAR","CX MONTE SAN ANTONIO","CX MONTESINOS","CX MURUA","CX NUEVO ABEJA","CX NUEVO OTAY","CX PACIFICO","CX PLAZA FIESTA","CX POPOTLA","CX PUERTO NUEVO","CX QUINTA","CX REFORMA","CX REFUGIO","CX RIBERAS DEL BOSQUE","CX ROMA","CX ROSARITO","CX ROSARITO NORTE","CX SAN FELIPE","CX SAN QUINTIN","CX SANCHEZ TABOADA","CX SANTA BARBARA","CX SANTA FE","CX SAUZAL","CX SEGUNDA","CX SOLER","CX VALLE DORADO","CX VALLE VERDE","CX VICENTE GUERRERO","CX VILLA DEL PRADO1","CX VILLA VERDE","CX VILLAFLORESTA","CX VILLAFONTANA","CX VILLAS DEL CAMPO","CX VILLAS DEL PRADO","CX XOCHIMILCO","CX XOCHIMILCO SUR","CX ZARAGOZA","XP ATENAS","XP BUENA VISTA","XP CUESTA BLANCA","XP FLAMINGOS","XP HERRERA","XP LAS CALIFORNIAS","XP MADERO","XP PARQUE SUR","XP PINOS","XP PRESIDENTES","XP PRIMO TAPIA","XP VILLA DEL ALAMO","XP VIZCAINO"];
+
+function initSDrop(el,items,onChange){
+  const ph=el.dataset.placeholder||'Seleccionar…';
+  el.innerHTML=`<button type="button" class="sdrop-btn placeholder">${ph}</button><div class="sdrop-panel"><input class="sdrop-search" placeholder="Buscar…"><div class="sdrop-list"></div></div>`;
+  const btn=el.querySelector('.sdrop-btn');
+  const search=el.querySelector('.sdrop-search');
+  const list=el.querySelector('.sdrop-list');
+  function render(q){
+    const f=q?items.filter(i=>i.toLowerCase().includes(q.toLowerCase())):items;
+    list.innerHTML=f.map(i=>`<div class="sdrop-opt${el.dataset.value===i?' active':''}" data-val="${i}">${i}</div>`).join('');
+  }
+  render('');
+  btn.addEventListener('click',()=>{
+    const open=el.classList.toggle('open');
+    if(open){search.value='';render('');setTimeout(()=>search.focus(),50)}
+  });
+  search.addEventListener('input',()=>render(search.value));
+  list.addEventListener('click',e=>{
+    const opt=e.target.closest('.sdrop-opt');
+    if(!opt)return;
+    const val=opt.dataset.val;
+    el.dataset.value=val;
+    btn.textContent=val;
+    btn.classList.remove('placeholder');
+    el.classList.remove('open');
+    if(onChange)onChange(val);
+  });
+  document.addEventListener('click',e=>{if(!el.contains(e.target))el.classList.remove('open')});
+}
+function resetSDrop(el){
+  el.dataset.value='';
+  const btn=el.querySelector('.sdrop-btn');
+  if(btn){btn.textContent=el.dataset.placeholder||'Seleccionar…';btn.classList.add('placeholder')}
+}
+function setSDrop(el,val){
+  el.dataset.value=val;
+  const btn=el.querySelector('.sdrop-btn');
+  if(btn){btn.textContent=val||el.dataset.placeholder||'Seleccionar…';btn.classList.toggle('placeholder',!val)}
+}
+
 // Init
 (function(){
   const t=localStorage.getItem('cv_theme');
   if(t)document.body.dataset.theme=t;
   loadVisits();
   document.getElementById('vFecha').value=todayStr();
+  initSDrop(document.getElementById('vTienda'),TIENDAS);
+  initSDrop(document.getElementById('hTienda'),TIENDAS);
+  initSDrop(document.getElementById('rTienda'),TIENDAS);
   renderKPIs();
   renderRecent();
 })();
@@ -424,7 +482,7 @@ function previewPhotos(input){
 
 function saveVisit(){
   const fecha=document.getElementById('vFecha').value;
-  const tienda=document.getElementById('vTienda').value.trim();
+  const tienda=document.getElementById('vTienda').dataset.value||'';
   const proveedor=document.getElementById('vProveedor').value.trim();
   const contacto=document.getElementById('vContacto').value.trim();
   const motivo=document.getElementById('vMotivo').value;
@@ -458,7 +516,7 @@ function saveVisit(){
 function clearForm(){
   editingId=null;
   document.getElementById('vFecha').value=todayStr();
-  document.getElementById('vTienda').value='';
+  resetSDrop(document.getElementById('vTienda'));
   document.getElementById('vProveedor').value='';
   document.getElementById('vContacto').value='';
   document.getElementById('vMotivo').value='Revisión de inventario';
@@ -475,7 +533,7 @@ function editVisit(id){
   editingId=id;
   showTab('registro');
   document.getElementById('vFecha').value=v.fecha;
-  document.getElementById('vTienda').value=v.tienda;
+  setSDrop(document.getElementById('vTienda'),v.tienda);
   document.getElementById('vProveedor').value=v.proveedor||'';
   document.getElementById('vContacto').value=v.contacto||'';
   document.getElementById('vMotivo').value=v.motivo;
@@ -570,8 +628,7 @@ function populateHistorialFilters(){
   const tiendas=[...new Set(visits.map(v=>v.tienda))].sort();
   const provs=[...new Set(visits.map(v=>v.proveedor).filter(Boolean))].sort();
   const motivos=[...new Set(visits.map(v=>v.motivo))].sort();
-  const hTienda=document.getElementById('hTienda');
-  hTienda.innerHTML='<option value="">Todas</option>'+tiendas.map(t=>`<option>${esc(t)}</option>`).join('');
+  // hTienda is an sdrop initialized at startup with all TIENDAS
   const hProv=document.getElementById('hProv');
   hProv.innerHTML='<option value="">Todos</option>'+provs.map(p=>`<option>${esc(p)}</option>`).join('');
   const hMotivo=document.getElementById('hMotivo');
@@ -581,7 +638,7 @@ function populateHistorialFilters(){
 function filterHistorial(){
   const desde=document.getElementById('hDesde').value;
   const hasta=document.getElementById('hHasta').value;
-  const tienda=document.getElementById('hTienda').value;
+  const tienda=document.getElementById('hTienda').dataset.value||'';
   const prov=document.getElementById('hProv').value;
   const motivo=document.getElementById('hMotivo').value;
   const estado=document.getElementById('hEstado').value;
@@ -619,7 +676,7 @@ function filterHistorial(){
 function clearHistorialFilters(){
   document.getElementById('hDesde').value='';
   document.getElementById('hHasta').value='';
-  document.getElementById('hTienda').value='';
+  resetSDrop(document.getElementById('hTienda'));
   document.getElementById('hProv').value='';
   document.getElementById('hMotivo').value='';
   document.getElementById('hEstado').value='';
@@ -631,7 +688,7 @@ function populateReportFilters(){
   const provs=[...new Set(visits.map(v=>v.proveedor).filter(Boolean))].sort();
   const tiendas=[...new Set(visits.map(v=>v.tienda))].sort();
   document.getElementById('rProv').innerHTML='<option value="">Todos</option>'+provs.map(p=>`<option>${esc(p)}</option>`).join('');
-  document.getElementById('rTienda').innerHTML='<option value="">Todas</option>'+tiendas.map(t=>`<option>${esc(t)}</option>`).join('');
+  // rTienda is an sdrop initialized at startup with all TIENDAS
 }
 
 // Excel
@@ -639,7 +696,7 @@ function generateExcel(){
   const desde=document.getElementById('rDesde').value;
   const hasta=document.getElementById('rHasta').value;
   const prov=document.getElementById('rProv').value;
-  const tienda=document.getElementById('rTienda').value;
+  const tienda=document.getElementById('rTienda').dataset.value||'';
   const estado=document.getElementById('rEstado').value;
 
   let data=visits.filter(v=>{
