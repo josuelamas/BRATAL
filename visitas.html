@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Visitas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0e14;--card:#151923;--card2:#1a2030;--border:#1e2636;--text:#e2e8f0;--muted:#7a8599;
+  --accent:#3b82f6;--accent2:#60a5fa;--glow:rgba(59,130,246,.15);
+  --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--info:#06b6d4;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b0e14;--card:#151923;--card2:#1a2030;--border:#1e2636;--text:#e2e8f0;--muted:#7a8599;
+}}
+:root[data-theme="dark"]{
+  --bg:#0b0e14;--card:#151923;--card2:#1a2030;--border:#1e2636;--text:#e2e8f0;--muted:#7a8599;
+}
+:root[data-theme="light"]{
+  --bg:#f1f5f9;--card:#ffffff;--card2:#f8fafc;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;
+  --accent:#2563eb;--accent2:#3b82f6;--glow:rgba(37,99,235,.08);
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+
+/* Layout */
+.app{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s}
+.sidebar-logo{padding:24px 20px;font-family:'Outfit',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px;border-bottom:1px solid var(--border)}
+.sidebar-nav{flex:1;padding:12px 10px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:var(--muted);font-size:14px;font-weight:500;text-decoration:none;transition:all .15s;cursor:pointer;margin-bottom:2px}
+.nav-item:hover,.nav-item.active{background:var(--glow);color:var(--text)}
+.nav-item svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.user-avatar{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.user-name{font-size:13px;font-weight:600}
+.user-role{font-size:11px;color:var(--muted)}
+.btn-logout{display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;width:100%;font-family:inherit}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger)}
+.btn-logout svg{width:16px;height:16px;fill:currentColor}
+.main{margin-left:240px;flex:1;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--card)}
+.topbar-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:20px}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.hamburger{display:none;align-items:center;justify-content:center;width:38px;height:38px;background:var(--card);border:1px solid var(--border);border-radius:10px;cursor:pointer}
+.hamburger svg{width:20px;height:20px;fill:var(--text)}
+.theme-btn{width:38px;height:38px;background:var(--card2);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.theme-btn svg{width:18px;height:18px;fill:var(--muted)}
+.content{padding:24px 28px}
+
+/* KPI row */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi:nth-child(1)::before{background:var(--accent)}
+.kpi:nth-child(2)::before{background:var(--success)}
+.kpi:nth-child(3)::before{background:var(--warning)}
+.kpi:nth-child(4)::before{background:var(--info)}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.kpi-val{font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;margin-top:4px}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px}
+.tab{padding:10px 20px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;border:none;background:none;font-family:inherit}
+.tab.active{background:var(--accent);color:#fff}
+.tab:hover:not(.active){color:var(--text);background:var(--glow)}
+
+/* Form */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:22px}
+.form-card h3{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--glow)}
+.form-group textarea{resize:vertical;min-height:70px}
+.form-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.btn{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--glow)}
+.btn-secondary{background:var(--card2);border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+.btn-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--success)}
+
+/* Filters bar */
+.filters-bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px;min-width:150px;flex:1;max-width:220px}
+.filter-group label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.filter-group select,.filter-group input{padding:9px 11px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;cursor:pointer;width:100%}
+.filter-group select:focus,.filter-group input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--glow)}
+.btn-filter{padding:9px 16px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;height:38px;white-space:nowrap}
+.btn-clear{padding:9px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-weight:600;font-size:13px;font-family:inherit;cursor:pointer;height:38px;white-space:nowrap}
+
+/* Table */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.table-header h3{font-size:15px;font-weight:700}
+.table-count{font-size:12px;color:var(--muted);font-weight:500}
+.table-scroll{overflow-x:auto;max-height:60vh;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;z-index:2}
+th{background:var(--card2);padding:9px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:hover td{background:var(--glow)}
+.badge{padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;display:inline-block}
+.badge-green{background:rgba(34,197,94,.12);color:var(--success)}
+.badge-yellow{background:rgba(245,158,11,.12);color:var(--warning)}
+.badge-red{background:rgba(239,68,68,.12);color:var(--danger)}
+.badge-blue{background:rgba(59,130,246,.12);color:var(--accent)}
+.actions-cell{display:flex;gap:4px}
+.act-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--card2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.act-btn svg{width:14px;height:14px;fill:var(--muted)}
+.act-btn:hover{border-color:var(--accent)}
+.act-btn:hover svg{fill:var(--accent)}
+.act-btn.del:hover{border-color:var(--danger)}
+.act-btn.del:hover svg{fill:var(--danger)}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:600px;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:18px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:300;display:none;animation:slideUp .3s}
+.toast.show{display:block}
+.toast-success{background:var(--success);color:#fff}
+.toast-error{background:var(--danger);color:#fff}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Sidebar overlay mobile */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}
+.sidebar-overlay.show{display:block}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.show{display:block}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .content{padding:14px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi{padding:12px}
+  .kpi-val{font-size:20px}
+  .form-grid{grid-template-columns:1fr}
+  .filters-bar{flex-direction:column;gap:8px}
+  .filter-group{max-width:100%;min-width:100%}
+  .topbar{padding:12px 16px}
+  .topbar-title{font-size:16px}
+  .tabs{overflow-x:auto}
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+
+/* Photo grid */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:8px}
+.photo-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer}
+.photo-upload-area{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;color:var(--muted);font-size:13px}
+.photo-upload-area:hover{border-color:var(--accent)}
+
+/* Hidden sections */
+.section{display:none}
+.section.active{display:block}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">VISITAS</div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" onclick="showTab('registro')" id="navRegistro">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
+      Nueva Visita
+    </a>
+    <a class="nav-item" onclick="showTab('historial')" id="navHistorial">
+      <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      Historial
+    </a>
+    <a class="nav-item" onclick="showTab('reporte')" id="navReporte">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+      Reporte Excel
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar">J</div>
+      <div><div class="user-name" id="userName">Usuario</div><div class="user-role">Control de Visitas</div></div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="hamburger" onclick="openSidebar()"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+      <div class="topbar-title">Control de Visitas</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-btn" onclick="toggleTheme()"><svg viewBox="0 0 24 24"><path d="M12 3a1 1 0 011 1v1a1 1 0 01-2 0V4a1 1 0 011-1zm0 15a1 1 0 011 1v1a1 1 0 01-2 0v-1a1 1 0 011-1zm9-6a1 1 0 010 2h-1a1 1 0 010-2h1zM5 12a1 1 0 010 2H4a1 1 0 010-2h1zm14.07-6.36a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41-1.41l.71-.71a1 1 0 011.41 0zM7.05 17.66a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41-1.41l.71-.71a1 1 0 011.41 0zM19.07 18.36a1 1 0 01-1.41 0l-.71-.71a1 1 0 011.41-1.41l.71.71a1 1 0 010 1.41zM7.05 6.34a1 1 0 01-1.41 0l-.71-.71A1 1 0 016.34 4.22l.71.71a1 1 0 010 1.41zM12 8a4 4 0 100 8 4 4 0 000-8z"/></svg></button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <!-- TAB: Nueva Visita -->
+    <div class="section active" id="secRegistro">
+      <div class="form-card">
+        <h3>📋 Registrar Visita</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" id="vFecha">
+          </div>
+          <div class="form-group">
+            <label>Tienda / Sucursal</label>
+            <input type="text" id="vTienda" placeholder="Ej: Calimax Otay">
+          </div>
+          <div class="form-group">
+            <label>Proveedor</label>
+            <input type="text" id="vProveedor" placeholder="Ej: VEPORTO DE MEXICO">
+          </div>
+          <div class="form-group">
+            <label>Contacto en Tienda</label>
+            <input type="text" id="vContacto" placeholder="Nombre del contacto">
+          </div>
+          <div class="form-group">
+            <label>Motivo</label>
+            <select id="vMotivo">
+              <option value="Revisión de inventario">Revisión de inventario</option>
+              <option value="Acomodo de producto">Acomodo de producto</option>
+              <option value="Levantamiento de pedido">Levantamiento de pedido</option>
+              <option value="Revisión de exhibición">Revisión de exhibición</option>
+              <option value="Entrega de material POP">Entrega de material POP</option>
+              <option value="Seguimiento a incidencia">Seguimiento a incidencia</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="vEstado">
+              <option value="Completada">Completada</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Cancelada">Cancelada</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Observaciones</label>
+            <textarea id="vObs" placeholder="Notas, hallazgos, pendientes…"></textarea>
+          </div>
+          <div class="form-group full">
+            <label>Fotos (opcional)</label>
+            <div class="photo-upload-area" onclick="document.getElementById('vFotos').click()">
+              📷 Clic para agregar fotos
+              <input type="file" id="vFotos" multiple accept="image/*" style="display:none" onchange="previewPhotos(this)">
+            </div>
+            <div class="photo-grid" id="photoPreview"></div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="clearForm()">Limpiar</button>
+          <button class="btn btn-primary" onclick="saveVisit()">💾 Guardar Visita</button>
+        </div>
+      </div>
+
+      <!-- Últimas visitas -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>Últimas Visitas</h3>
+          <span class="table-count" id="recentCount"></span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Tienda</th><th>Proveedor</th><th>Motivo</th><th>Estado</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="recentBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Historial -->
+    <div class="section" id="secHistorial">
+      <div class="filters-bar">
+        <div class="filter-group"><label>Desde</label><input type="date" id="hDesde"></div>
+        <div class="filter-group"><label>Hasta</label><input type="date" id="hHasta"></div>
+        <div class="filter-group"><label>Tienda</label><select id="hTienda"><option value="">Todas</option></select></div>
+        <div class="filter-group"><label>Proveedor</label><select id="hProv"><option value="">Todos</option></select></div>
+        <div class="filter-group"><label>Motivo</label><select id="hMotivo"><option value="">Todos</option></select></div>
+        <div class="filter-group"><label>Estado</label><select id="hEstado"><option value="">Todos</option><option value="Completada">Completada</option><option value="Pendiente">Pendiente</option><option value="Cancelada">Cancelada</option></select></div>
+        <button class="btn-filter" onclick="filterHistorial()">Filtrar</button>
+        <button class="btn-clear" onclick="clearHistorialFilters()">Limpiar</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>Historial Completo</h3>
+          <span class="table-count" id="histCount"></span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Tienda</th><th>Proveedor</th><th>Contacto</th><th>Motivo</th><th>Estado</th><th>Observaciones</th><th>Fotos</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Reporte -->
+    <div class="section" id="secReporte">
+      <div class="form-card">
+        <h3>📊 Exportar a Excel</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Desde</label>
+            <input type="date" id="rDesde">
+          </div>
+          <div class="form-group">
+            <label>Hasta</label>
+            <input type="date" id="rHasta">
+          </div>
+          <div class="form-group">
+            <label>Proveedor</label>
+            <select id="rProv"><option value="">Todos</option></select>
+          </div>
+          <div class="form-group">
+            <label>Tienda</label>
+            <select id="rTienda"><option value="">Todas</option></select>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="rEstado"><option value="">Todos</option><option value="Completada">Completada</option><option value="Pendiente">Pendiente</option><option value="Cancelada">Cancelada</option></select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="generateExcel()">📥 Exportar Excel</button>
+        </div>
+      </div>
+      <div id="reportPreview"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal ver detalle -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY='cv_visits';
+let visits=[];
+let editingId=null;
+let pendingPhotos=[];
+
+// Init
+(function(){
+  const t=localStorage.getItem('cv_theme');
+  if(t)document.body.dataset.theme=t;
+  loadVisits();
+  document.getElementById('vFecha').value=todayStr();
+  renderKPIs();
+  renderRecent();
+})();
+
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function toggleTheme(){document.body.dataset.theme=document.body.dataset.theme==='dark'?'light':'dark';localStorage.setItem('cv_theme',document.body.dataset.theme)}
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebarOverlay').classList.add('show')}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('show')}
+
+function showTab(t){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(t==='registro'){document.getElementById('secRegistro').classList.add('active');document.getElementById('navRegistro').classList.add('active');renderRecent()}
+  if(t==='historial'){document.getElementById('secHistorial').classList.add('active');document.getElementById('navHistorial').classList.add('active');populateHistorialFilters();filterHistorial()}
+  if(t==='reporte'){document.getElementById('secReporte').classList.add('active');document.getElementById('navReporte').classList.add('active');populateReportFilters()}
+  closeSidebar();
+}
+
+function loadVisits(){
+  try{visits=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){visits=[]}
+}
+function saveAll(){localStorage.setItem(STORAGE_KEY,JSON.stringify(visits))}
+
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.className='toast toast-'+type+' show';
+  t.textContent=msg;
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function previewPhotos(input){
+  const container=document.getElementById('photoPreview');
+  pendingPhotos=[];
+  container.innerHTML='';
+  const files=Array.from(input.files);
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      pendingPhotos.push(e.target.result);
+      const img=document.createElement('img');
+      img.src=e.target.result;
+      img.className='photo-thumb';
+      container.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function saveVisit(){
+  const fecha=document.getElementById('vFecha').value;
+  const tienda=document.getElementById('vTienda').value.trim();
+  const proveedor=document.getElementById('vProveedor').value.trim();
+  const contacto=document.getElementById('vContacto').value.trim();
+  const motivo=document.getElementById('vMotivo').value;
+  const estado=document.getElementById('vEstado').value;
+  const obs=document.getElementById('vObs').value.trim();
+
+  if(!fecha||!tienda){toast('Fecha y Tienda son obligatorios','error');return}
+
+  const visit={
+    id:editingId||Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    fecha,tienda,proveedor,contacto,motivo,estado,obs,
+    fotos:pendingPhotos.length?pendingPhotos:(editingId?visits.find(v=>v.id===editingId)?.fotos||[]:[]),
+    creado:editingId?visits.find(v=>v.id===editingId)?.creado||new Date().toISOString():new Date().toISOString()
+  };
+
+  if(editingId){
+    const idx=visits.findIndex(v=>v.id===editingId);
+    if(idx>=0)visits[idx]=visit;
+    editingId=null;
+    toast('Visita actualizada');
+  }else{
+    visits.unshift(visit);
+    toast('Visita registrada');
+  }
+  saveAll();
+  clearForm();
+  renderKPIs();
+  renderRecent();
+}
+
+function clearForm(){
+  editingId=null;
+  document.getElementById('vFecha').value=todayStr();
+  document.getElementById('vTienda').value='';
+  document.getElementById('vProveedor').value='';
+  document.getElementById('vContacto').value='';
+  document.getElementById('vMotivo').value='Revisión de inventario';
+  document.getElementById('vEstado').value='Completada';
+  document.getElementById('vObs').value='';
+  document.getElementById('vFotos').value='';
+  document.getElementById('photoPreview').innerHTML='';
+  pendingPhotos=[];
+}
+
+function editVisit(id){
+  const v=visits.find(x=>x.id===id);
+  if(!v)return;
+  editingId=id;
+  showTab('registro');
+  document.getElementById('vFecha').value=v.fecha;
+  document.getElementById('vTienda').value=v.tienda;
+  document.getElementById('vProveedor').value=v.proveedor||'';
+  document.getElementById('vContacto').value=v.contacto||'';
+  document.getElementById('vMotivo').value=v.motivo;
+  document.getElementById('vEstado').value=v.estado;
+  document.getElementById('vObs').value=v.obs||'';
+  pendingPhotos=v.fotos||[];
+  const container=document.getElementById('photoPreview');
+  container.innerHTML='';
+  (v.fotos||[]).forEach(src=>{const img=document.createElement('img');img.src=src;img.className='photo-thumb';container.appendChild(img)});
+  window.scrollTo({top:0,behavior:'smooth'});
+  toast('Editando visita…','success');
+}
+
+function deleteVisit(id){
+  if(!confirm('¿Eliminar esta visita?'))return;
+  visits=visits.filter(v=>v.id!==id);
+  saveAll();
+  renderKPIs();
+  renderRecent();
+  filterHistorial();
+  toast('Visita eliminada');
+}
+
+function viewVisit(id){
+  const v=visits.find(x=>x.id===id);
+  if(!v)return;
+  let html=`<h3>Detalle de Visita</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Fecha</strong><div>${v.fecha}</div></div>
+      <div><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Tienda</strong><div>${v.tienda}</div></div>
+      <div><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Proveedor</strong><div>${v.proveedor||'—'}</div></div>
+      <div><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Contacto</strong><div>${v.contacto||'—'}</div></div>
+      <div><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Motivo</strong><div>${v.motivo}</div></div>
+      <div><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Estado</strong><div>${badgeHTML(v.estado)}</div></div>
+    </div>`;
+  if(v.obs)html+=`<div style="margin-bottom:16px"><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Observaciones</strong><div style="margin-top:4px;white-space:pre-wrap;font-size:13px">${esc(v.obs)}</div></div>`;
+  if(v.fotos&&v.fotos.length){
+    html+=`<div><strong style="color:var(--muted);font-size:11px;text-transform:uppercase">Fotos (${v.fotos.length})</strong><div class="photo-grid" style="margin-top:8px">`;
+    v.fotos.forEach(src=>html+=`<img src="${src}" class="photo-thumb" onclick="window.open(this.src)">`);
+    html+=`</div></div>`;
+  }
+  html+=`<div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end">
+    <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+    <button class="btn btn-primary" onclick="closeModal();editVisit('${v.id}')">Editar</button>
+  </div>`;
+  document.getElementById('modalContent').innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open')}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function badgeHTML(estado){
+  const cls=estado==='Completada'?'badge-green':estado==='Pendiente'?'badge-yellow':'badge-red';
+  return `<span class="badge ${cls}">${estado}</span>`;
+}
+
+function renderKPIs(){
+  const total=visits.length;
+  const completadas=visits.filter(v=>v.estado==='Completada').length;
+  const pendientes=visits.filter(v=>v.estado==='Pendiente').length;
+  const tiendas=new Set(visits.map(v=>v.tienda)).size;
+  const thisMonth=todayStr().slice(0,7);
+  const mes=visits.filter(v=>v.fecha.startsWith(thisMonth)).length;
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total Visitas</div><div class="kpi-val">${total}</div><div class="kpi-sub">${mes} este mes</div></div>
+    <div class="kpi"><div class="kpi-label">Completadas</div><div class="kpi-val">${completadas}</div><div class="kpi-sub">${total?Math.round(completadas/total*100):0}%</div></div>
+    <div class="kpi"><div class="kpi-label">Pendientes</div><div class="kpi-val">${pendientes}</div><div class="kpi-sub">Por dar seguimiento</div></div>
+    <div class="kpi"><div class="kpi-label">Tiendas Visitadas</div><div class="kpi-val">${tiendas}</div><div class="kpi-sub">Únicas</div></div>`;
+}
+
+function renderRecent(){
+  const recent=visits.slice(0,10);
+  document.getElementById('recentCount').textContent=`Mostrando ${recent.length} de ${visits.length}`;
+  const tbody=document.getElementById('recentBody');
+  if(!recent.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Sin visitas registradas</td></tr>';return}
+  tbody.innerHTML=recent.map(v=>`<tr>
+    <td>${v.fecha}</td>
+    <td>${esc(v.tienda)}</td>
+    <td>${esc(v.proveedor||'—')}</td>
+    <td>${v.motivo}</td>
+    <td>${badgeHTML(v.estado)}</td>
+    <td><div class="actions-cell">
+      <button class="act-btn" title="Ver" onclick="viewVisit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+      <button class="act-btn" title="Editar" onclick="editVisit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+      <button class="act-btn del" title="Eliminar" onclick="deleteVisit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+// Historial
+function populateHistorialFilters(){
+  const tiendas=[...new Set(visits.map(v=>v.tienda))].sort();
+  const provs=[...new Set(visits.map(v=>v.proveedor).filter(Boolean))].sort();
+  const motivos=[...new Set(visits.map(v=>v.motivo))].sort();
+  const hTienda=document.getElementById('hTienda');
+  hTienda.innerHTML='<option value="">Todas</option>'+tiendas.map(t=>`<option>${esc(t)}</option>`).join('');
+  const hProv=document.getElementById('hProv');
+  hProv.innerHTML='<option value="">Todos</option>'+provs.map(p=>`<option>${esc(p)}</option>`).join('');
+  const hMotivo=document.getElementById('hMotivo');
+  hMotivo.innerHTML='<option value="">Todos</option>'+motivos.map(m=>`<option>${m}</option>`).join('');
+}
+
+function filterHistorial(){
+  const desde=document.getElementById('hDesde').value;
+  const hasta=document.getElementById('hHasta').value;
+  const tienda=document.getElementById('hTienda').value;
+  const prov=document.getElementById('hProv').value;
+  const motivo=document.getElementById('hMotivo').value;
+  const estado=document.getElementById('hEstado').value;
+
+  let filtered=visits.filter(v=>{
+    if(desde&&v.fecha<desde)return false;
+    if(hasta&&v.fecha>hasta)return false;
+    if(tienda&&v.tienda!==tienda)return false;
+    if(prov&&v.proveedor!==prov)return false;
+    if(motivo&&v.motivo!==motivo)return false;
+    if(estado&&v.estado!==estado)return false;
+    return true;
+  });
+
+  document.getElementById('histCount').textContent=`${filtered.length} visitas`;
+  const tbody=document.getElementById('histBody');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">Sin resultados</td></tr>';return}
+  tbody.innerHTML=filtered.map(v=>`<tr>
+    <td>${v.fecha}</td>
+    <td>${esc(v.tienda)}</td>
+    <td>${esc(v.proveedor||'—')}</td>
+    <td>${esc(v.contacto||'—')}</td>
+    <td>${v.motivo}</td>
+    <td>${badgeHTML(v.estado)}</td>
+    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(v.obs||'—')}</td>
+    <td>${v.fotos&&v.fotos.length?'📷 '+v.fotos.length:'—'}</td>
+    <td><div class="actions-cell">
+      <button class="act-btn" title="Ver" onclick="viewVisit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+      <button class="act-btn" title="Editar" onclick="editVisit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+      <button class="act-btn del" title="Eliminar" onclick="deleteVisit('${v.id}')"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function clearHistorialFilters(){
+  document.getElementById('hDesde').value='';
+  document.getElementById('hHasta').value='';
+  document.getElementById('hTienda').value='';
+  document.getElementById('hProv').value='';
+  document.getElementById('hMotivo').value='';
+  document.getElementById('hEstado').value='';
+  filterHistorial();
+}
+
+// Report filters
+function populateReportFilters(){
+  const provs=[...new Set(visits.map(v=>v.proveedor).filter(Boolean))].sort();
+  const tiendas=[...new Set(visits.map(v=>v.tienda))].sort();
+  document.getElementById('rProv').innerHTML='<option value="">Todos</option>'+provs.map(p=>`<option>${esc(p)}</option>`).join('');
+  document.getElementById('rTienda').innerHTML='<option value="">Todas</option>'+tiendas.map(t=>`<option>${esc(t)}</option>`).join('');
+}
+
+// Excel
+function generateExcel(){
+  const desde=document.getElementById('rDesde').value;
+  const hasta=document.getElementById('rHasta').value;
+  const prov=document.getElementById('rProv').value;
+  const tienda=document.getElementById('rTienda').value;
+  const estado=document.getElementById('rEstado').value;
+
+  let data=visits.filter(v=>{
+    if(desde&&v.fecha<desde)return false;
+    if(hasta&&v.fecha>hasta)return false;
+    if(prov&&v.proveedor!==prov)return false;
+    if(tienda&&v.tienda!==tienda)return false;
+    if(estado&&v.estado!==estado)return false;
+    return true;
+  });
+
+  if(!data.length){toast('No hay visitas para el rango seleccionado','error');return}
+
+  // Hoja 1: Detalle
+  const rows=data.map((v,i)=>({
+    '#':i+1,
+    'Fecha':v.fecha,
+    'Tienda':v.tienda,
+    'Proveedor':v.proveedor||'',
+    'Contacto':v.contacto||'',
+    'Motivo':v.motivo,
+    'Estado':v.estado,
+    'Observaciones':v.obs||'',
+    'Fotos':v.fotos?v.fotos.length:0
+  }));
+  const ws1=XLSX.utils.json_to_sheet(rows);
+
+  // Anchos de columna
+  ws1['!cols']=[{wch:5},{wch:12},{wch:25},{wch:30},{wch:20},{wch:25},{wch:12},{wch:50},{wch:6}];
+
+  // Hoja 2: Resumen por Tienda
+  const tiendaMap={};
+  data.forEach(v=>{
+    if(!tiendaMap[v.tienda])tiendaMap[v.tienda]={Tienda:v.tienda,Total:0,Completadas:0,Pendientes:0,Canceladas:0};
+    tiendaMap[v.tienda].Total++;
+    if(v.estado==='Completada')tiendaMap[v.tienda].Completadas++;
+    if(v.estado==='Pendiente')tiendaMap[v.tienda].Pendientes++;
+    if(v.estado==='Cancelada')tiendaMap[v.tienda].Canceladas++;
+  });
+  const ws2=XLSX.utils.json_to_sheet(Object.values(tiendaMap).sort((a,b)=>a.Tienda.localeCompare(b.Tienda)));
+  ws2['!cols']=[{wch:30},{wch:8},{wch:12},{wch:12},{wch:12}];
+
+  // Hoja 3: Resumen por Motivo
+  const motivoMap={};
+  data.forEach(v=>{
+    if(!motivoMap[v.motivo])motivoMap[v.motivo]={Motivo:v.motivo,Total:0};
+    motivoMap[v.motivo].Total++;
+  });
+  const ws3=XLSX.utils.json_to_sheet(Object.values(motivoMap).sort((a,b)=>b.Total-a.Total));
+  ws3['!cols']=[{wch:30},{wch:8}];
+
+  // Hoja 4: Resumen General
+  const comp=data.filter(v=>v.estado==='Completada').length;
+  const pend=data.filter(v=>v.estado==='Pendiente').length;
+  const canc=data.filter(v=>v.estado==='Cancelada').length;
+  const tiendasU=new Set(data.map(v=>v.tienda)).size;
+  const summaryData=[
+    {Métrica:'Total de Visitas',Valor:data.length},
+    {Métrica:'Completadas',Valor:comp},
+    {Métrica:'Pendientes',Valor:pend},
+    {Métrica:'Canceladas',Valor:canc},
+    {Métrica:'Tiendas Visitadas',Valor:tiendasU},
+    {Métrica:'Rango',Valor:(desde||'inicio')+' a '+(hasta||'hoy')},
+    {Métrica:'Generado',Valor:new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}
+  ];
+  const ws4=XLSX.utils.json_to_sheet(summaryData);
+  ws4['!cols']=[{wch:22},{wch:30}];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws1,'Detalle Visitas');
+  XLSX.utils.book_append_sheet(wb,ws4,'Resumen General');
+  XLSX.utils.book_append_sheet(wb,ws2,'Por Tienda');
+  XLSX.utils.book_append_sheet(wb,ws3,'Por Motivo');
+
+  XLSX.writeFile(wb,'reporte_visitas_'+todayStr()+'.xlsx');
+  toast('Excel generado');
+}
+</script>
+</body>
+</html>
